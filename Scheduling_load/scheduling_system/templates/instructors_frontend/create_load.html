@@ -1,0 +1,167 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheduling System</title>
+    <link rel="stylesheet" href="{% static 'css/create-load.css' %}">
+</head>
+<body>
+    <div class="container">
+        <!-- Search and Filter -->
+        <div class="header">
+            <label for="instructor">Instructor's Name:</label>
+            <input type="text" id="instructor" placeholder="Instructor's Name">
+            
+            <!-- Filter Dropdown -->
+            <label for="filter">Filter (All, Regular, COS):</label>
+            <select id="filter">
+                <option value="all">All</option>
+                <option value="regular">Regular</option>
+                <option value="cos">COS</option>
+            </select>
+        </div>
+
+        <!-- Subject Entries -->
+        <div class="subject-entries" id="subject-container">
+            <div class="entry">
+                <label>Subject 1:</label>
+                <input type="text" placeholder="Subject Name">
+                <input type="time">
+                <input type="time">
+                <div class="action-buttons">
+                    <span class="remove-icon">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Subject Icon -->
+        <div>
+            <div class="add-icon" id="add-subject">+</div>
+        </div>
+
+        <!-- Room and Day -->
+        <div class="room-day">
+            <div class="room">
+                <label for="room">Room No:</label>
+                <select id="room">
+                    <option value="COT 103">COT 103</option>
+                    <option value="COT 101">COT 101</option>
+                    <option value="COT 102">COT 102</option>
+                </select>
+            </div>
+
+            <div class="day">
+                <label for="day">Day:</label>
+                <select id="day">
+                    <option value="M">M</option>
+                    <option value="TUE">TUE</option>
+                    <option value="WED">WED</option>
+                    <option value="THU">THU</option>
+                    <option value="FRI">FRI</option>
+                    <option value="SAT">SAT</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="save-button">
+            <button>Save Assign Load</button>
+        </div>
+    </div>
+
+    <!-- JavaScript for Adding/Removing Subjects and Fetching Instructor Suggestions -->
+    <script>
+$(document).ready(function() {
+    // Fetch instructor suggestions based on user input
+    $("#instructor").on("input", function() {
+        const query = $(this).val();
+        const filter = $("#filter").val() || "all"; // Default filter to "all" if not selected
+
+        if (query.length >= 2) {
+            // Show suggestions box while typing
+            $("#suggestions").show();
+
+            $.ajax({
+                url: "{% url 'search_instructors' %}",  // Your search API endpoint
+                data: { q: query, filter: filter },
+                success: function(data) {
+                    const suggestions = data.results;
+                    $("#suggestions").empty();
+                    if (suggestions.length > 0) {
+                        suggestions.forEach(function(suggestion) {
+                            $("#suggestions").append(`<div class="suggestion-item">${suggestion.name}</div>`);
+                        });
+                    } else {
+                        $("#suggestions").hide();  // Hide suggestions if no results found
+                    }
+                },
+                error: function() {
+                    $("#suggestions").hide();  // Hide suggestions on error
+                }
+            });
+        } else {
+            // Hide suggestions box if query length is less than 2
+            $("#suggestions").hide();
+        }
+    });
+
+    // Hide suggestions when clicking outside of the input
+    $(document).on("click", function(event) {
+        if (!$(event.target).closest("#instructor").length) {
+            $("#suggestions").hide();
+        }
+    });
+
+    // Handle clicking a suggestion
+    $(document).on("click", ".suggestion-item", function() {
+        $("#instructor").val($(this).text());  // Set the input value to the clicked suggestion
+        $("#suggestions").hide();  // Hide the suggestions box after selection
+    });
+});
+
+
+        // Add and remove subject fields
+        document.getElementById('add-subject').addEventListener('click', function() {
+            const container = document.getElementById('subject-container');
+
+            // Count existing subjects
+            const subjectCount = container.querySelectorAll('.entry').length + 1;
+
+            // Create a new entry
+            const newEntry = document.createElement('div');
+            newEntry.classList.add('entry');
+            newEntry.innerHTML = `
+                <label>Subject ${subjectCount}:</label>
+                <input type="text" placeholder="Subject Name">
+                <input type="time">
+                <input type="time">
+                <div class="action-buttons">
+                    <span class="remove-icon">-</span>
+                </div>
+            `;
+
+            // Append the new entry to the container
+            container.appendChild(newEntry);
+
+            // Add event listener to the new remove button
+            newEntry.querySelector('.remove-icon').addEventListener('click', function() {
+                container.removeChild(newEntry);
+            });
+        });
+
+        // Add event listeners to default remove buttons
+        document.querySelectorAll('.remove-icon').forEach(button => {
+            button.addEventListener('click', function(event) {
+                const entry = event.target.closest('.entry');
+                entry.remove();
+            });
+        });
+    </script>
+
+    <!-- Suggestions Box -->
+    <div id="suggestions"></div>
+</body>
+</html>
